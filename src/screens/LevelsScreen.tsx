@@ -38,7 +38,7 @@ function LevelItem({
   onToggle: (id: string, val: boolean) => void;
   onDelete: (id: string) => void;
 }) {
-  const typeInfo = TYPE_OPTIONS.find((t) => t.value === item.type)!;
+  const typeInfo = TYPE_OPTIONS.find((t) => t.value === item.type) ?? TYPE_OPTIONS[0];
   return (
     <View style={styles.levelRow}>
       <View style={[styles.typeDot, { backgroundColor: typeInfo.color }]} />
@@ -78,7 +78,8 @@ export default function LevelsScreen() {
       Alert.alert('Invalid Price', 'Enter a valid positive price.');
       return;
     }
-    if (!label.trim()) {
+    const resolvedLabel = selectedType === 'loss' ? 'Stop Loss' : label.trim();
+    if (!resolvedLabel) {
       Alert.alert('Missing Label', 'Enter a label for this level.');
       return;
     }
@@ -86,7 +87,7 @@ export default function LevelsScreen() {
       id: uuidv4(),
       price: p,
       type: selectedType,
-      label: label.trim(),
+      label: resolvedLabel,
       isActive: true,
       createdAt: new Date().toISOString(),
     };
@@ -133,13 +134,15 @@ export default function LevelsScreen() {
               value={price}
               onChangeText={setPrice}
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Label (e.g. Target 1)"
-              placeholderTextColor={C.muted}
-              value={label}
-              onChangeText={setLabel}
-            />
+            {selectedType === 'profit' && (
+              <TextInput
+                style={styles.input}
+                placeholder="Label (e.g. Target 1)"
+                placeholderTextColor={C.muted}
+                value={label}
+                onChangeText={setLabel}
+              />
+            )}
             <View style={styles.typeRow}>
               {TYPE_OPTIONS.map((opt) => (
                 <TouchableOpacity
@@ -162,6 +165,9 @@ export default function LevelsScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+            {selectedType === 'loss' && (
+              <Text style={styles.autoLabel}>Label will be set to "Stop Loss" automatically</Text>
+            )}
             <TouchableOpacity style={styles.addBtn} onPress={addLevel}>
               <Text style={styles.addBtnText}>+ Add Level</Text>
             </TouchableOpacity>
@@ -205,7 +211,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 10,
   },
-  typeRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  typeRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
   typeBtn: {
     flex: 1,
     paddingVertical: 10,
@@ -214,11 +220,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   typeBtnText: { fontSize: 13, fontWeight: '700' },
+  autoLabel: { color: C.muted, fontSize: 11, marginBottom: 10, marginTop: 2 },
   addBtn: {
     backgroundColor: C.gold,
     borderRadius: 8,
     padding: 13,
     alignItems: 'center',
+    marginTop: 4,
   },
   addBtnText: { color: '#000', fontWeight: '800', fontSize: 15 },
   sectionTitle: {
