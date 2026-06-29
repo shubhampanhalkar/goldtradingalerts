@@ -91,13 +91,9 @@ export default function SettingsScreen() {
   };
 
   const testPriceFetch = async () => {
-    if (!settings.finnhubApiKey) {
-      Alert.alert('Missing API Key', 'Enter your Finnhub API key first.');
-      return;
-    }
     setTestingPrice(true);
     try {
-      const quote = await fetchGoldPrice(settings.finnhubApiKey);
+      const quote = await fetchGoldPrice();
       Alert.alert('Success', `XAU/USD: $${quote.c.toFixed(2)}\nChange: ${quote.dp.toFixed(2)}%`);
     } catch (e: any) {
       Alert.alert('Error', e.message);
@@ -144,14 +140,10 @@ export default function SettingsScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.container}>
-        <Section title="FINNHUB API">
-          <Field
-            label="API Key"
-            value={settings.finnhubApiKey}
-            onChangeText={(v) => update('finnhubApiKey', v)}
-            placeholder="d1a2b3c4d5e6f7g8h9..."
-            secureTextEntry
-          />
+        <Section title="GOLD PRICE">
+          <Text style={styles.hint}>
+            Live XAU/USD price is fetched from gold-api.com — free, no API key required.
+          </Text>
           <TouchableOpacity
             style={[styles.testBtn, testingPrice && styles.btnDisabled]}
             onPress={testPriceFetch}

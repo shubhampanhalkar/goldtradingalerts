@@ -105,9 +105,9 @@ export async function checkAndFireAlerts(currentPrice: number): Promise<void> {
 
 export async function runPriceCheck(): Promise<number | null> {
   const settings = await getSettings();
-  if (!settings.isMonitoringEnabled || !settings.finnhubApiKey) return null;
+  if (!settings.isMonitoringEnabled) return null;
   try {
-    const quote = await fetchGoldPrice(settings.finnhubApiKey);
+    const quote = await fetchGoldPrice();
     await checkAndFireAlerts(quote.c);
     return quote.c;
   } catch {

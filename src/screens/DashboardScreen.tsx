@@ -75,13 +75,9 @@ export default function DashboardScreen() {
 
   const fetchPrice = async (s?: Settings) => {
     const cfg = s ?? settings;
-    if (!cfg?.finnhubApiKey) {
-      setError('Set your Finnhub API key in Settings');
-      return;
-    }
     try {
       setError(null);
-      const data = await fetchGoldPrice(cfg.finnhubApiKey);
+      const data = await fetchGoldPrice();
       setQuote(data);
       if (cfg.isMonitoringEnabled) {
         await checkAndFireAlerts(data.c);
