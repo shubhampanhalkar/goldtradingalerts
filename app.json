@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Gold Trading Alerts",
+    "slug": "goldtradingalerts",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "android": {
+      "package": "com.goldalerts.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0D0D0D"
+      },
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#F0B90B",
+          "sounds": []
+        }
+      ],
+      "expo-background-fetch"
+    ],
+    "sdkVersion": "51.0.0"
+  }
+}
