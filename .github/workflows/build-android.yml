@@ -41,6 +41,22 @@ jobs:
       - name: Prebuild Android project
         run: npx expo prebuild --platform android --non-interactive --no-install
 
+      - name: Fix missing splashscreen color resource
+        run: |
+          COLORS=android/app/src/main/res/values/colors.xml
+          mkdir -p "$(dirname "$COLORS")"
+          if [ ! -f "$COLORS" ]; then
+            printf '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n  <color name="splashscreen_background">#0D0D0D</color>\n</resources>\n' > "$COLORS"
+          elif ! grep -q 'splashscreen_background' "$COLORS"; then
+            python3 -c "
+          import re, sys
+          content = open('$COLORS').read()
+          entry = '  <color name=\"splashscreen_background\">#0D0D0D</color>\n'
+          content = re.sub(r'(</resources>)', entry + r'\1', content)
+          open('$COLORS', 'w').write(content)
+          "
+          fi
+
       - name: Build debug APK
         working-directory: android
         env:
