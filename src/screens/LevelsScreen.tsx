@@ -19,16 +19,14 @@ const C = {
   border: '#1E1E1E',
   gold: '#F0B90B',
   green: '#00C853',
-  blue: '#2196F3',
   red: '#F44336',
   text: '#FFFFFF',
   muted: '#888888',
 };
 
 const TYPE_OPTIONS: { label: string; value: LevelType; color: string }[] = [
-  { label: 'Entry', value: 'entry', color: C.green },
-  { label: 'Re-entry', value: 'reentry', color: C.blue },
-  { label: 'Stop', value: 'stop', color: C.red },
+  { label: 'Profit Level', value: 'profit', color: C.green },
+  { label: 'Loss Level', value: 'loss', color: C.red },
 ];
 
 function LevelItem({
@@ -47,12 +45,7 @@ function LevelItem({
       <View style={{ flex: 1, marginLeft: 10 }}>
         <Text style={styles.levelLabel}>{item.label}</Text>
         <Text style={styles.levelPrice}>${item.price.toFixed(2)}</Text>
-        <Text style={styles.levelMeta}>
-          {typeInfo.label}
-          {item.lastTriggeredAt
-            ? ` · Last: ${new Date(item.lastTriggeredAt).toLocaleDateString()}`
-            : ''}
-        </Text>
+        <Text style={[styles.levelMeta, { color: typeInfo.color }]}>{typeInfo.label}</Text>
       </View>
       <Switch
         value={item.isActive}
@@ -71,7 +64,7 @@ export default function LevelsScreen() {
   const [levels, setLevels] = useState<Level[]>([]);
   const [price, setPrice] = useState('');
   const [label, setLabel] = useState('');
-  const [selectedType, setSelectedType] = useState<LevelType>('entry');
+  const [selectedType, setSelectedType] = useState<LevelType>('profit');
 
   useFocusEffect(
     useCallback(() => {
@@ -131,10 +124,10 @@ export default function LevelsScreen() {
       ListHeaderComponent={
         <View>
           <View style={styles.form}>
-            <Text style={styles.formTitle}>Add Price Level</Text>
+            <Text style={styles.formTitle}>ADD PRICE LEVEL</Text>
             <TextInput
               style={styles.input}
-              placeholder="Price (e.g. 2350.00)"
+              placeholder="Price (e.g. 3280.00)"
               placeholderTextColor={C.muted}
               keyboardType="decimal-pad"
               value={price}
@@ -142,7 +135,7 @@ export default function LevelsScreen() {
             />
             <TextInput
               style={styles.input}
-              placeholder="Label (e.g. Daily Resistance)"
+              placeholder="Label (e.g. Target 1)"
               placeholderTextColor={C.muted}
               value={label}
               onChangeText={setLabel}
@@ -174,9 +167,7 @@ export default function LevelsScreen() {
             </TouchableOpacity>
           </View>
           {levels.length > 0 && (
-            <Text style={styles.sectionTitle}>
-              SAVED LEVELS ({levels.length})
-            </Text>
+            <Text style={styles.sectionTitle}>SAVED LEVELS ({levels.length})</Text>
           )}
         </View>
       }
@@ -194,7 +185,7 @@ export default function LevelsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0D0D0D' },
+  container: { flex: 1, backgroundColor: C.bg },
   form: {
     margin: 16,
     padding: 16,
@@ -203,7 +194,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
   },
-  formTitle: { color: C.gold, fontSize: 14, fontWeight: '700', marginBottom: 12, letterSpacing: 1 },
+  formTitle: { color: C.gold, fontSize: 11, fontWeight: '700', marginBottom: 12, letterSpacing: 1.5 },
   input: {
     backgroundColor: '#1A1A1A',
     color: C.text,
@@ -217,12 +208,12 @@ const styles = StyleSheet.create({
   typeRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   typeBtn: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1.5,
     alignItems: 'center',
   },
-  typeBtnText: { fontSize: 13, fontWeight: '600' },
+  typeBtnText: { fontSize: 13, fontWeight: '700' },
   addBtn: {
     backgroundColor: C.gold,
     borderRadius: 8,
@@ -251,7 +242,7 @@ const styles = StyleSheet.create({
   typeDot: { width: 10, height: 10, borderRadius: 5 },
   levelLabel: { color: C.text, fontSize: 14, fontWeight: '600' },
   levelPrice: { color: C.gold, fontSize: 18, fontWeight: 'bold', marginTop: 1 },
-  levelMeta: { color: C.muted, fontSize: 11, marginTop: 2 },
+  levelMeta: { fontSize: 11, marginTop: 2 },
   deleteBtn: { padding: 8, marginLeft: 4 },
   emptyText: { color: C.muted, textAlign: 'center', marginTop: 32, fontSize: 14 },
 });

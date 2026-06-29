@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type LevelType = 'entry' | 'reentry' | 'stop';
+export type LevelType = 'profit' | 'loss';
 
 export interface Level {
   id: string;
@@ -24,7 +24,6 @@ export interface AlertRecord {
 }
 
 export interface Settings {
-  finnhubApiKey: string;
   telegramBotToken: string;
   telegramChatId: string;
   priceThreshold: number;
@@ -39,10 +38,9 @@ const KEYS = {
 };
 
 export const DEFAULT_SETTINGS: Settings = {
-  finnhubApiKey: '',
   telegramBotToken: '',
   telegramChatId: '',
-  priceThreshold: 1.0,
+  priceThreshold: 2.0,
   isMonitoringEnabled: false,
 };
 

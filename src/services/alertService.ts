@@ -8,12 +8,11 @@ import {
   getLastPrice,
   saveLastPrice,
   AlertRecord,
-  Level,
 } from '../storage/storage';
-import { fetchGoldPrice } from './finnhubService';
+import { fetchGoldPrice } from './goldPriceService';
 import { sendTelegramMessage, formatAlertMessage } from './telegramService';
 
-const COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
+const COOLDOWN_MS = 30 * 60 * 1000;
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -71,12 +70,12 @@ export async function checkAndFireAlerts(currentPrice: number): Promise<void> {
     };
 
     await addAlert(alert);
-
     level.lastTriggeredAt = new Date().toISOString();
     levelsChanged = true;
 
-    const title = `Gold Alert: ${level.label}`;
-    const body = `Price $${currentPrice.toFixed(2)} touched level $${level.price.toFixed(2)}`;
+    const typeLabel = level.type === 'profit' ? 'Profit Level' : 'Loss Level';
+    const title = `⚠️ Gold approaching ${typeLabel}`;
+    const body = `${level.label}: $${currentPrice.toFixed(2)} near $${level.price.toFixed(2)}`;
 
     await fireLocalNotification(title, body).catch(() => {});
 
@@ -96,10 +95,7 @@ export async function checkAndFireAlerts(currentPrice: number): Promise<void> {
     }
   }
 
-  if (levelsChanged) {
-    await saveLevels(levels);
-  }
-
+  if (levelsChanged) await saveLevels(levels);
   await saveLastPrice(currentPrice);
 }
 

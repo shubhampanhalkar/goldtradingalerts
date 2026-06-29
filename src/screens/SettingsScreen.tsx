@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getSettings, saveSettings, Settings } from '../storage/storage';
-import { fetchGoldPrice } from '../services/finnhubService';
+import { fetchGoldPrice } from '../services/goldPriceService';
 import { sendTelegramMessage } from '../services/telegramService';
 
 const C = {
@@ -70,10 +70,9 @@ function Field({
 
 export default function SettingsScreen() {
   const [settings, setSettings] = useState<Settings>({
-    finnhubApiKey: '',
     telegramBotToken: '',
     telegramChatId: '',
-    priceThreshold: 1.0,
+    priceThreshold: 2.0,
     isMonitoringEnabled: false,
   });
   const [testingPrice, setTestingPrice] = useState(false);
@@ -94,7 +93,7 @@ export default function SettingsScreen() {
     setTestingPrice(true);
     try {
       const quote = await fetchGoldPrice();
-      Alert.alert('Success', `XAU/USD: $${quote.c.toFixed(2)}\nChange: ${quote.dp.toFixed(2)}%`);
+      Alert.alert('Success ✅', `XAU/USD: $${quote.c.toFixed(2)}\nUpdated: ${new Date(quote.updatedAt).toLocaleTimeString()}`);
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
@@ -114,7 +113,7 @@ export default function SettingsScreen() {
         settings.telegramChatId,
         '✅ <b>Gold Trading Alerts</b>\n\nTelegram notifications are working correctly!'
       );
-      Alert.alert('Success', 'Test message sent to Telegram!');
+      Alert.alert('Success ✅', 'Test message sent to Telegram!');
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
@@ -131,7 +130,7 @@ export default function SettingsScreen() {
     setSaving(true);
     await saveSettings({ ...settings, priceThreshold: threshold });
     setSaving(false);
-    Alert.alert('Saved', 'Settings saved successfully.');
+    Alert.alert('Saved ✅', 'Settings saved successfully.');
   };
 
   return (
@@ -140,9 +139,10 @@ export default function SettingsScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.container}>
-        <Section title="GOLD PRICE">
+
+        <Section title="GOLD PRICE SOURCE">
           <Text style={styles.hint}>
-            Live XAU/USD price is fetched from gold-api.com — free, no API key required.
+            Live XAU/USD from gold-api.com — free, no API key, updates every few seconds.
           </Text>
           <TouchableOpacity
             style={[styles.testBtn, testingPrice && styles.btnDisabled]}
@@ -167,7 +167,7 @@ export default function SettingsScreen() {
             label="Chat ID"
             value={settings.telegramChatId}
             onChangeText={(v) => update('telegramChatId', v)}
-            placeholder="-1001234567890 or 123456789"
+            placeholder="-1001234567890"
           />
           <TouchableOpacity
             style={[styles.testBtn, testingTelegram && styles.btnDisabled]}
@@ -185,21 +185,19 @@ export default function SettingsScreen() {
             label="Price Threshold ($)"
             value={settings.priceThreshold.toString()}
             onChangeText={(v) => update('priceThreshold', v)}
-            placeholder="1.00"
+            placeholder="2.00"
             keyboardType="decimal-pad"
           />
           <Text style={styles.hint}>
-            Alert fires when price is within this amount of a level. Default: $1.00
+            Alert fires when price comes within this distance of a level.{'\n'}
+            Set slightly above/below your actual level. Default: $2.00
           </Text>
         </Section>
 
         <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>ℹ️ Background Monitoring</Text>
+          <Text style={styles.infoTitle}>ℹ️ How It Works</Text>
           <Text style={styles.infoText}>
-            When monitoring is enabled on the Dashboard, the app polls Finnhub every 5 minutes
-            while open, and every ~15 minutes in the background (Android OS minimum). Each
-            level has a 30-minute cooldown to prevent duplicate alerts. Telegram notifications
-            are sent in addition to local push notifications.
+            The app polls gold price every 30 seconds while open. When price comes within the threshold of a saved level, it sends a Telegram message saying "price approaching profit level" or "loss level". Each level has a 30-minute cooldown to avoid spam.
           </Text>
         </View>
 
@@ -218,20 +216,14 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 32 },
   section: {
-    backgroundColor: '#141414',
+    backgroundColor: C.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#1E1E1E',
+    borderColor: C.border,
     padding: 16,
     marginBottom: 14,
   },
-  sectionTitle: {
-    color: C.gold,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-    marginBottom: 12,
-  },
+  sectionTitle: { color: C.gold, fontSize: 11, fontWeight: '700', letterSpacing: 1.5, marginBottom: 12 },
   field: { marginBottom: 10 },
   fieldLabel: { color: C.muted, fontSize: 12, marginBottom: 4 },
   input: {
@@ -239,7 +231,7 @@ const styles = StyleSheet.create({
     color: C.text,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#1E1E1E',
+    borderColor: C.border,
     padding: 11,
     fontSize: 14,
   },
@@ -254,7 +246,7 @@ const styles = StyleSheet.create({
   },
   testBtnText: { color: C.gold, fontWeight: '600', fontSize: 14 },
   btnDisabled: { opacity: 0.5 },
-  hint: { color: C.muted, fontSize: 11, marginTop: 4, lineHeight: 16 },
+  hint: { color: C.muted, fontSize: 12, lineHeight: 18 },
   infoBox: {
     backgroundColor: '#1A1A00',
     borderRadius: 10,
@@ -265,11 +257,6 @@ const styles = StyleSheet.create({
   },
   infoTitle: { color: C.gold, fontSize: 13, fontWeight: '700', marginBottom: 8 },
   infoText: { color: '#CCCC88', fontSize: 12, lineHeight: 18 },
-  saveBtn: {
-    backgroundColor: C.gold,
-    borderRadius: 10,
-    padding: 15,
-    alignItems: 'center',
-  },
+  saveBtn: { backgroundColor: C.gold, borderRadius: 10, padding: 15, alignItems: 'center' },
   saveBtnText: { color: '#000', fontWeight: '800', fontSize: 16 },
 });

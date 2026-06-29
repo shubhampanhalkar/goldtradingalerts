@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { fetchGoldPrice, QuoteData } from '../services/finnhubService';
+import { fetchGoldPrice, QuoteData } from '../services/goldPriceService';
 import { checkAndFireAlerts } from '../services/alertService';
 import { registerBackgroundFetch, unregisterBackgroundFetch } from '../tasks/backgroundTask';
 import {
@@ -26,32 +26,35 @@ const C = {
   border: '#1E1E1E',
   gold: '#F0B90B',
   green: '#00C853',
-  blue: '#2196F3',
   red: '#F44336',
   text: '#FFFFFF',
   muted: '#888888',
 };
 
-const POLL_INTERVAL = 5 * 60 * 1000;
+const POLL_INTERVAL_MS = 30 * 1000; // 30 seconds
 
 const typeColor: Record<string, string> = {
-  entry: C.green,
-  reentry: C.blue,
-  stop: C.red,
+  profit: C.green,
+  loss: C.red,
+};
+
+const typeLabel: Record<string, string> = {
+  profit: 'PROFIT',
+  loss: 'LOSS',
 };
 
 function AlertItem({ item }: { item: AlertRecord }) {
   return (
     <View style={styles.alertRow}>
       <View style={[styles.badge, { backgroundColor: typeColor[item.levelType] }]}>
-        <Text style={styles.badgeText}>{item.levelType.toUpperCase()}</Text>
+        <Text style={styles.badgeText}>{typeLabel[item.levelType]}</Text>
       </View>
       <View style={{ flex: 1, marginLeft: 10 }}>
         <Text style={styles.alertLabel}>
           {item.direction === 'from_above' ? '📉' : '📈'} {item.levelLabel} — ${item.levelPrice.toFixed(2)}
         </Text>
         <Text style={styles.alertSub}>
-          Hit at ${item.priceAtTrigger.toFixed(2)} · {new Date(item.triggeredAt).toLocaleTimeString()}
+          Hit ${item.priceAtTrigger.toFixed(2)} · {new Date(item.triggeredAt).toLocaleTimeString()}
         </Text>
       </View>
     </View>
@@ -67,19 +70,13 @@ export default function DashboardScreen() {
   const [alerts, setAlerts] = useState<AlertRecord[]>([]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const loadSettings = async () => {
-    const s = await getSettings();
-    setSettings(s);
-    return s;
-  };
-
-  const fetchPrice = async (s?: Settings) => {
-    const cfg = s ?? settings;
+  const fetchPrice = async (monitor?: boolean) => {
     try {
       setError(null);
       const data = await fetchGoldPrice();
       setQuote(data);
-      if (cfg.isMonitoringEnabled) {
+      const shouldCheck = monitor ?? settings?.isMonitoringEnabled ?? false;
+      if (shouldCheck) {
         await checkAndFireAlerts(data.c);
       }
       const history = await getAlerts();
@@ -89,39 +86,47 @@ export default function DashboardScreen() {
     }
   };
 
-  const initialLoad = async () => {
-    setLoading(true);
-    const s = await loadSettings();
-    const history = await getAlerts();
-    setAlerts(history.slice(0, 5));
-    await fetchPrice(s);
-    setLoading(false);
+  const startPolling = (monitor: boolean) => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => fetchPrice(monitor), POLL_INTERVAL_MS);
+  };
+
+  const stopPolling = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
   };
 
   useFocusEffect(
     useCallback(() => {
-      initialLoad();
+      let mounted = true;
+      const init = async () => {
+        setLoading(true);
+        const s = await getSettings();
+        if (!mounted) return;
+        setSettings(s);
+        const history = await getAlerts();
+        setAlerts(history.slice(0, 5));
+        await fetchPrice(s.isMonitoringEnabled);
+        setLoading(false);
+        startPolling(s.isMonitoringEnabled);
+      };
+      init();
       return () => {
-        if (intervalRef.current) clearInterval(intervalRef.current);
+        mounted = false;
+        stopPolling();
       };
     }, [])
   );
 
   useEffect(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    if (settings?.isMonitoringEnabled) {
-      intervalRef.current = setInterval(() => fetchPrice(), POLL_INTERVAL);
-    }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    if (settings) startPolling(settings.isMonitoringEnabled);
   }, [settings?.isMonitoringEnabled]);
 
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchPrice();
-    const history = await getAlerts();
-    setAlerts(history.slice(0, 5));
     setRefreshing(false);
   };
 
@@ -136,9 +141,6 @@ export default function DashboardScreen() {
       await unregisterBackgroundFetch();
     }
   };
-
-  const change = quote?.d ?? 0;
-  const changeColor = change >= 0 ? C.green : C.red;
 
   return (
     <FlatList
@@ -157,23 +159,10 @@ export default function DashboardScreen() {
                 <Text style={styles.price}>
                   {quote ? `$${quote.c.toFixed(2)}` : '—'}
                 </Text>
-                <Text style={[styles.change, { color: changeColor }]}>
-                  {change >= 0 ? '+' : ''}{change.toFixed(2)} ({quote?.dp?.toFixed(2) ?? '0.00'}%)
+                <Text style={styles.updatedAt}>
+                  Updated: {quote?.updatedAt ? new Date(quote.updatedAt).toLocaleTimeString() : '—'}
                 </Text>
-                <View style={styles.statsRow}>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statLabel}>Open</Text>
-                    <Text style={styles.statValue}>${quote?.o?.toFixed(2) ?? '—'}</Text>
-                  </View>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statLabel}>High</Text>
-                    <Text style={[styles.statValue, { color: C.green }]}>${quote?.h?.toFixed(2) ?? '—'}</Text>
-                  </View>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statLabel}>Low</Text>
-                    <Text style={[styles.statValue, { color: C.red }]}>${quote?.l?.toFixed(2) ?? '—'}</Text>
-                  </View>
-                </View>
+                <Text style={styles.pollNote}>Polls every 30 seconds</Text>
               </>
             )}
           </View>
@@ -182,7 +171,7 @@ export default function DashboardScreen() {
             <View>
               <Text style={styles.monitorLabel}>Price Monitoring</Text>
               <Text style={styles.monitorSub}>
-                {settings?.isMonitoringEnabled ? 'Active — polls every 5 min' : 'Inactive'}
+                {settings?.isMonitoringEnabled ? '● Active — checking levels every 30s' : '○ Inactive'}
               </Text>
             </View>
             <Switch
@@ -194,7 +183,7 @@ export default function DashboardScreen() {
           </View>
 
           {alerts.length > 0 && (
-            <Text style={styles.sectionTitle}>Recent Alerts</Text>
+            <Text style={styles.sectionTitle}>RECENT ALERTS</Text>
           )}
         </View>
       }
@@ -224,11 +213,8 @@ const styles = StyleSheet.create({
   },
   symbol: { color: C.muted, fontSize: 14, letterSpacing: 2, marginBottom: 8 },
   price: { color: C.gold, fontSize: 52, fontWeight: 'bold', letterSpacing: 1 },
-  change: { fontSize: 18, marginTop: 4 },
-  statsRow: { flexDirection: 'row', marginTop: 16, gap: 24 },
-  statItem: { alignItems: 'center' },
-  statLabel: { color: C.muted, fontSize: 11 },
-  statValue: { color: C.text, fontSize: 14, fontWeight: '600', marginTop: 2 },
+  updatedAt: { color: C.muted, fontSize: 12, marginTop: 8 },
+  pollNote: { color: C.border, fontSize: 11, marginTop: 4 },
   errorText: { color: C.red, fontSize: 14, textAlign: 'center', marginVertical: 12 },
   monitorRow: {
     flexDirection: 'row',
@@ -246,7 +232,7 @@ const styles = StyleSheet.create({
   monitorSub: { color: C.muted, fontSize: 12, marginTop: 2 },
   sectionTitle: {
     color: C.gold,
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1,
     marginHorizontal: 16,

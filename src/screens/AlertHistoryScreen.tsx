@@ -16,22 +16,19 @@ const C = {
   border: '#1E1E1E',
   gold: '#F0B90B',
   green: '#00C853',
-  blue: '#2196F3',
   red: '#F44336',
   text: '#FFFFFF',
   muted: '#888888',
 };
 
 const typeColor: Record<string, string> = {
-  entry: C.green,
-  reentry: C.blue,
-  stop: C.red,
+  profit: C.green,
+  loss: C.red,
 };
 
 const typeLabel: Record<string, string> = {
-  entry: 'ENTRY',
-  reentry: 'RE-ENTRY',
-  stop: 'STOP',
+  profit: 'PROFIT',
+  loss: 'LOSS',
 };
 
 function AlertItem({ item }: { item: AlertRecord }) {
@@ -97,7 +94,7 @@ export default function AlertHistoryScreen() {
             <Text style={styles.emptyIcon}>🔔</Text>
             <Text style={styles.emptyText}>No alerts triggered yet</Text>
             <Text style={styles.emptySub}>
-              Add price levels and enable monitoring to receive alerts
+              Add profit/loss levels and enable monitoring to receive alerts
             </Text>
           </View>
         }

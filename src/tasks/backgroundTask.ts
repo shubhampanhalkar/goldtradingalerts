@@ -24,7 +24,7 @@ export async function registerBackgroundFetch(): Promise<void> {
     return;
   }
   await BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
-    minimumInterval: 15 * 60, // 15 minutes (Android OS minimum)
+    minimumInterval: 15 * 60,
     stopOnTerminate: false,
     startOnBoot: true,
   });
