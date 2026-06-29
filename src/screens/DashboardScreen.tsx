@@ -70,13 +70,15 @@ export default function DashboardScreen() {
   const [alerts, setAlerts] = useState<AlertRecord[]>([]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fetchPrice = async (monitor?: boolean) => {
+  // Use a ref so the interval callback always reads the latest monitoring state
+  const monitoringRef = useRef<boolean>(false);
+
+  const fetchPrice = async () => {
     try {
       setError(null);
       const data = await fetchGoldPrice();
       setQuote(data);
-      const shouldCheck = monitor ?? settings?.isMonitoringEnabled ?? false;
-      if (shouldCheck) {
+      if (monitoringRef.current) {
         await checkAndFireAlerts(data.c);
       }
       const history = await getAlerts();
@@ -86,9 +88,9 @@ export default function DashboardScreen() {
     }
   };
 
-  const startPolling = (monitor: boolean) => {
+  const startPolling = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => fetchPrice(monitor), POLL_INTERVAL_MS);
+    intervalRef.current = setInterval(fetchPrice, POLL_INTERVAL_MS);
   };
 
   const stopPolling = () => {
@@ -105,12 +107,13 @@ export default function DashboardScreen() {
         setLoading(true);
         const s = await getSettings();
         if (!mounted) return;
+        monitoringRef.current = s.isMonitoringEnabled;
         setSettings(s);
         const history = await getAlerts();
         setAlerts(history.slice(0, 5));
-        await fetchPrice(s.isMonitoringEnabled);
+        await fetchPrice();
         setLoading(false);
-        startPolling(s.isMonitoringEnabled);
+        startPolling();
       };
       init();
       return () => {
@@ -120,8 +123,11 @@ export default function DashboardScreen() {
     }, [])
   );
 
+  // Keep ref in sync when toggle changes — no need to restart interval
   useEffect(() => {
-    if (settings) startPolling(settings.isMonitoringEnabled);
+    if (settings) {
+      monitoringRef.current = settings.isMonitoringEnabled;
+    }
   }, [settings?.isMonitoringEnabled]);
 
   const onRefresh = async () => {
