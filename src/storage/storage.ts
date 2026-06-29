@@ -47,7 +47,17 @@ export const DEFAULT_SETTINGS: Settings = {
 export async function getLevels(): Promise<Level[]> {
   try {
     const raw = await AsyncStorage.getItem(KEYS.LEVELS);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const levels: Level[] = JSON.parse(raw);
+    // migrate old type values
+    return levels.map((l) => ({
+      ...l,
+      type: (l.type === 'entry' || l.type === ('reentry' as string))
+        ? 'profit'
+        : l.type === 'stop'
+        ? 'loss'
+        : l.type,
+    }));
   } catch {
     return [];
   }
