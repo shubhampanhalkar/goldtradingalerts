@@ -31,7 +31,7 @@ const C = {
   muted: '#888888',
 };
 
-const POLL_INTERVAL_MS = 30 * 1000; // 30 seconds
+const POLL_INTERVAL_MS = 10 * 1000; // 10 seconds
 
 const typeColor: Record<string, string> = {
   profit: C.green,
@@ -168,7 +168,7 @@ export default function DashboardScreen() {
                 <Text style={styles.updatedAt}>
                   Updated: {quote?.updatedAt ? new Date(quote.updatedAt).toLocaleTimeString() : '—'}
                 </Text>
-                <Text style={styles.pollNote}>Polls every 30 seconds</Text>
+                <Text style={styles.pollNote}>Polls every 10 seconds</Text>
               </>
             )}
           </View>
@@ -177,7 +177,7 @@ export default function DashboardScreen() {
             <View>
               <Text style={styles.monitorLabel}>Price Monitoring</Text>
               <Text style={styles.monitorSub}>
-                {settings?.isMonitoringEnabled ? '● Active — checking levels every 30s' : '○ Inactive'}
+                {settings?.isMonitoringEnabled ? '● Active — checking levels every 10s' : '○ Inactive'}
               </Text>
             </View>
             <Switch

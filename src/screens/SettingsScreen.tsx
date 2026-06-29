@@ -197,7 +197,7 @@ export default function SettingsScreen() {
         <View style={styles.infoBox}>
           <Text style={styles.infoTitle}>ℹ️ How It Works</Text>
           <Text style={styles.infoText}>
-            The app polls gold price every 30 seconds while open. When price comes within the threshold of a saved level, it sends a Telegram message saying "price approaching profit level" or "loss level". Each level has a 30-minute cooldown to avoid spam.
+            The app polls gold price every 10 seconds while open. When price comes within the threshold of a saved level, it sends a Telegram message saying "price approaching profit level" or "loss level". Each level has a 30-minute cooldown to avoid spam.
           </Text>
         </View>
 
