@@ -1,5 +1,5 @@
 import * as Notifications from 'expo-notifications';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../utils/id';
 import {
   getLevels,
   saveLevels,
@@ -59,7 +59,7 @@ export async function checkAndFireAlerts(currentPrice: number): Promise<void> {
       lastPrice !== null && lastPrice > level.price ? 'from_above' : 'from_below';
 
     const alert: AlertRecord = {
-      id: uuidv4(),
+      id: generateId(),
       levelId: level.id,
       levelPrice: level.price,
       levelType: level.type,

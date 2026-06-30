@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../utils/id';
 import { getLevels, saveLevels, Level, LevelType } from '../storage/storage';
 
 const C = {
@@ -84,7 +84,7 @@ export default function LevelsScreen() {
       return;
     }
     const newLevel: Level = {
-      id: uuidv4(),
+      id: generateId(),
       price: p,
       type: selectedType,
       label: resolvedLabel,
